@@ -22,7 +22,8 @@ void yyerror(const char *s);
 "|"     { return ABS; }
 "("     { return OP; }
 ")"     { return CP; }
-[0-9]+	{ yylval = atoi(yytext); return NUMBER; }
+-?[0-9]+	{ yylval.ival = atoi(yytext); return NUMBER; }
+-?[0-9]+(\.[0-9]*)? { yylval.fval = atof(yytext); return DECIMAL; }
 
 \n      { return EOL; }
 "//".*  

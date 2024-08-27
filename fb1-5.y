@@ -1,44 +1,60 @@
-/* Companion source code for "flex & bison", published by O'Reilly
- * Media, ISBN 978-0-596-15597-1
- * Copyright (c) 2009, Taughannock Networks. All rights reserved.
- * See the README file for license conditions and contact info.
- * $Header: /home/johnl/flnb/code/RCS/fb1-5.y,v 2.1 2009/11/08 02:53:18 johnl Exp $
- */
-
-/* simplest version of calculator */
-
 %{
   #include <stdio.h>
+  #include <math.h>  // Incluir biblioteca matemática para fabs()
   int yylex(void);              // Declaración de yylex
   void yyerror(const char *s);  // Declaración de yyerror
+  int has_error = 0;
 %}
 
 /* declare tokens */
-%token NUMBER
+%token <ival> NUMBER
+%token <fval> DECIMAL
 %token ADD SUB MUL DIV ABS
 %token OP CP
 %token EOL
+%union {
+    int ival;
+    float fval;
+}
+
+%type <fval> exp factor term
+%type <ival> calclist
 
 %%
 
 calclist: /* nothing */
- | calclist exp EOL { printf("= %d\n> ", $2); }
+ | calclist exp EOL {
+    if (!has_error){
+       printf("= %.2f\n> ", $2);
+    } else {
+      has_error = 1;
+      printf("\n> ");
+    }
+
+
+  }  // Cambia %d a %f para imprimir flotantes
  | calclist EOL { printf("> "); } /* blank line or a comment */
  ;
 
 exp: factor
  | exp ADD exp { $$ = $1 + $3; }
  | exp SUB factor { $$ = $1 - $3; }
- | exp ABS factor { $$ = $1 | $3; }
+ | exp ABS factor { $$ = fabs($3); }  // Cambia la operación bitwise a fabs()
  ;
 
 factor: term
  | factor MUL term { $$ = $1 * $3; }
- | factor DIV term { $$ = $1 / $3; }
+ | factor DIV term { if ($3 == 0){
+    printf("invalido");
+    has_error = 1;
+ } else{
+  $$ = $1 / $3; 
+ }}
  ;
 
-term: NUMBER
- | ABS term { $$ = $2 >= 0? $2 : - $2; }
+term: NUMBER { $$ = $1; }
+ | DECIMAL { $$ = $1; }
+ | ABS term { $$ = fabs($2); }  // Cambia la operación bitwise a fabs()
  | OP exp CP { $$ = $2; }
  ;
 %%
